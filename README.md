@@ -1,16 +1,14 @@
 # fbs tutorial
-This tutorial is meant for Windows, Mac and Ubuntu. You need
-[Python 3.5](https://www.python.org/downloads/release/python-354/).
-(Later versions may work as well, but are not officially supported.)
+This tutorial shows how you can use fbs to create a simple Python GUI and an
+associated installer:
+
+![Screenshot of sample app on Windows](screenshots/quote-app.png) ![Windows installer](screenshots/installer-windows.png)
+ 
+You can follow this tutorial on Windows, Mac or Linux. The only prerequisite is
+Python 3.5 or 3.6. Python 3.7 is not yet supported and may not work.
 
 ## Setup
-[Download](https://github.com/mherrmann/fbs-tutorial/archive/master.zip)
-the Zip file of this repository and extract it. Then, open a command prompt
-and `cd` into it:
-
-    cd .../path/to/fbs-tutorial-master
-
-Create a virtual environment:
+Create a virtual environment in the current directory:
 
     python3 -m venv venv
 
@@ -25,207 +23,251 @@ The remainder of the tutorial assumes that the virtual environment is active.
 
 Install the required libraries (most notably, `fbs` and `PyQt5`):
 
-    pip install -r requirements.txt
+    pip install fbs PyQt5==5.9.2 PyInstaller==3.4
+
+You can also use Qt for Python instead of PyQt. To do this, simply write
+`PySide2` instead of `PyQt5` throughout this tutorial. For the above, use
+`pip install PySide2==5.11.2`.
+
+## Start a project
+Execute the following command to start a new fbs project:
+
+    fbs startproject
+
+This asks you a few questions. You can for instance use `Tutorial` as the app
+name and your name as the author.
+
+The command creates a new folder called `src/` in your current directory.
+This folder contains the minimum configuration for a bare-bones PyQt app.
 
 ## Run the app
-This repository contains a sample application. To run it from source, execute
-the following command:
+To run the basic PyQt application from source, execute the following command:
 
-    python -m fbs run
+    fbs run
 
-This shows a (admittedly not very exciting) window:
+This shows a (admittedly not very exciting) window. Screenshots on
+Windows/Mac/Ubuntu:
 
-![Screenshot of sample app](screenshots/app.png)
+![Screenshot of sample app on Windows](screenshots/app-windows.png) ![Screenshot of sample app on Mac](screenshots/app-mac.png) ![Screenshot of sample app on Ubuntu](screenshots/app-ubuntu.png)
 
-## Freezing your app
-Running the app from source requires Python to be set up. We don't want your
-users to have to do this. Instead, we want to create a standalone form of your
-app that runs on your users' computers. In the context of Python applications,
-this process is called "freezing".
+## Source code of the sample app
+Let's now take a look at the source code of the PyQt app that was generated.
+It is at
+[`src/main/python/main.py`](https://github.com/mherrmann/fbs/blob/master/fbs/builtin_commands/project_template/src/main/python/main.py):
 
-Use the following command to turn your app's source code into a standalone
+```python
+from fbs_runtime.application_context import ApplicationContext
+from PyQt5.QtWidgets import QMainWindow
+
+import sys
+
+class AppContext(ApplicationContext):           # 1. Subclass ApplicationContext
+    def run(self):                              # 2. Implement run()
+        window = QMainWindow()
+        window.setWindowTitle('Hello World!')
+        window.resize(250, 150)
+        window.show()
+        return self.app.exec_()                 # 3. End run() with this line
+
+if __name__ == '__main__':
+    appctxt = AppContext()                      # 4. Instantiate the subclass
+    exit_code = appctxt.run()                   # 5. Invoke run()
+    sys.exit(exit_code)
+```
+
+The important steps are highlighted as comments. If they look daunting to you,
+don't worry. They're the only boilerplate that's required. In the middle of the
+code, you can see that a window is being created, resized and then shown.
+
+## Freezing the app
+We want to turn the source code of our app into a standalone executable that can
+be run on your users' computers. In the context of Python applications, this
+process is called "freezing".
+
+Use the following command to turn the app's source code into a standalone
 executable:
 
-    python -m fbs freeze
+    fbs freeze
 
 This creates the folder `target/Tutorial`. You can copy this directory to any
-other computer (with the same OS as yours) and run your app there! Isn't that
+other computer (with the same OS as yours) and run the app there! Isn't that
 awesome?
 
 ## Creating an installer
 Desktop applications are normally distributed by means of an installer.
 On Windows, this would be an executable called `TutorialSetup.exe`.
-On Mac, mountable disk images such as `Tutorial.dmg` are commonly used.
-fbs lets you generate both of these files.
+On Mac, mountable disk images such as `Tutorial.dmg` are commonly used. Finally
+on Ubuntu, `.deb` files are the de-facto standard. fbs lets you generate each of
+these files via the command:
+
+    fbs installer
 
 ### Windows installer
-To create an installer on Windows, please first install
-[NSIS](http://nsis.sourceforge.net/Main_Page) and add its directory to your
-`PATH` environment variable. Then, you can run the following command:
+Before you can use the `installer` command on Windows, please install
+[NSIS](http://nsis.sourceforge.net/Main_Page) and add its installation directory
+to your `PATH` environment variable.
 
-    python -m fbs installer
-
-This creates an installer at `target/TutorialSetup.exe`. It lets your users pick
+The installer is created at `target/TutorialSetup.exe`. It lets your users pick
 the installation directory and adds your app to the Start Menu. It also creates
 an entry in Windows' list of installed programs. Your users can use this to
-uninstall your app. The following screenshots show these steps in action.
+uninstall your app. The following screenshots show these steps in action:
 
 <img src="screenshots/installer-windows-1.png" height="160"> <img src="screenshots/installer-windows-2.png" height="160"> <img src="screenshots/installer-windows-3.png" height="160"> <img src="screenshots/installer-windows-4.png" height="160">
 
 <img src="screenshots/uninstaller-windows-1.png" height="160"> <img src="screenshots/uninstaller-windows-2.png" height="160"> <img src="screenshots/uninstaller-windows-3.png" height="160">
 
 ### Mac installer
-Creating an installer on Mac is done with the same command as on Windows:
-
-    python -m fbs installer
-
-This creates the file `target/Tutorial.dmg` for distribution to your users.
-Upon opening it, the following volume is displayed:
+On Mac, the `installer` command generates the file `target/Tutorial.dmg`. When
+your users open it, they see the following volume:
 
 ![Screenshot of installer on Mac](screenshots/installer-mac.png)
 
 To install your app, your users simply drag its icon to the _Applications_
 folder (also shown in the volume).
 
-## Source code of the sample app
-The source code for the sample app is in
-[`src/main/python`](src/main/python/tutorial). It contains a
-[`main.py` script](src/main/python/tutorial/main.py), which serves as the entry
-point for the application:
+### Linux installer
+On Linux, the `installer` command requires that you have
+[fpm](https://github.com/jordansissel/fpm). You can for instance follow
+[these instructions](https://fpm.readthedocs.io/en/latest/installing.html) to
+install it.
+
+Depending on your Linux distribution, fbs creates the installer at 
+`target/Tutorial.deb`, `...pkg.tar.xz` or `...rpm`. Your users can use these
+files to install your app with their respective package manager.
+
+## A more interesting example
+We will now create a more powerful example. Here's what it looks like on
+Windows:
+
+![Quote app](screenshots/quote-app.png)
+
+When you click on the button in the window, a new quote is fetched from the
+internet and displayed above.
+
+Before you can run this example, you need to install the Python
+[requests](http://docs.python-requests.org/en/master/) library. To do this,
+type in the following command:
+
+    pip install requests
+
+The source code of the new app consists of two files:
+ * [`main.py`](https://raw.githubusercontent.com/mherrmann/fbs-tutorial/master/main.py)
+ * [`styles.qss`](https://raw.githubusercontent.com/mherrmann/fbs-tutorial/master/styles.qss)
+
+Please copy the former over the existing file in `src/main/python/`, and the
+latter into the _new_ directory `src/main/resources/base/`. If you are using
+PySide2 instead of PyQt, you have to replace all occurrences of `PyQt5` in
+`main.py` by `PySide2`.
+
+Once you have followed these steps, you can do `fbs run` (or `fbs freeze` etc.)
+as before.
+
+The new app uses the following code to fetch quotes from the internet:
 
 ```python
-from tutorial.application_context import AppContext
+def _get_quote():
+    response = requests.get('https://talaikis.com/api/quotes/random/')
+    return response.json()['quote']
+```
 
-import sys
+You can see that it uses the `requests` library we just installed above. Feel 
+free to open
+[talaikis.com/api/quotes/random](https://talaikis.com/api/quotes/random/) in the
+browser to get a feel for its data.
 
+The app follows the same basic steps as before. It defines an application
+context with a `run()` method that ends in `return self.app.exec_()`:
+
+```python
+class AppContext(ApplicationContext):
+    def run(self):
+        ...
+        return self.app.exec_()
+    ...
+```
+
+It then instantiates this application context and invokes `run()`:
+
+```python
 if __name__ == '__main__':
     appctxt = AppContext()
     exit_code = appctxt.run()
     sys.exit(exit_code)
 ```
 
-The script instantiates and then runs an _application context_. This is defined
-in [`application_context.py`](src/main/python/tutorial/application_context.py):
+What's different is what happens in between. First, let's look at the 
+implementation of `run()`:
 
 ```python
-from fbs_runtime.application_context import ApplicationContext, \
-    cached_property
-from PyQt5.QtWidgets import QApplication, QMainWindow
-
-class AppContext(ApplicationContext):
-    def run(self):
-        self.main_window.show()
-        return self.app.exec_()
-    @cached_property
-    def main_window(self):
-        result = QMainWindow()
-        result.setWindowTitle('Hello World!')
-        result.resize(250, 150)
-        return result
+def run(self):
+    stylesheet = self.get_resource('styles.qss')
+    self.app.setStyleSheet(open(stylesheet).read())
+    self.window.show()
+    return self.app.exec_()
 ```
 
-Your apps should follow the same structure:
+The first line uses
+[`get_resource(...)`](https://build-system.fman.io/manual/#get_resource) to
+obtain the path to [`styles.qss`](styles.qss). This is a QSS file, Qt's
+equivalent to CSS. The next line reads its contents and sets them as the
+stylesheet of `self.app`.
 
- * Create a subclass of `fbs_runtime.application_context.ApplicationContext`.
- * Define a `run()` method that ends with `return self.app.exec_()`.
- * Use `@cached_property` to define the objects of your app.
- * In your `main` script, instantiate the application context, invoke its
-   `run()` method and pass the return value to `sys.exit(...)`.
+fbs ensures that `get_resource(...)` works both when running from source (i.e.
+during `fbs run`) and when running the compiled form of your app. In the former
+case, the returned path is in `src/main/resources`. In the latter, it will be in
+your app's installation directory. fbs handles the corresponding details
+transparently.
 
-This  may seem complicated at first. But it has several advantages: First, it
-lets `fbs` define useful default behaviour (such as setting the
-[app icon](src/main/icons) or letting you access resource files bundled with
-your app). Also, as your application becomes more complex, you will find that
-an application context is extremely useful for "wiring together" the various
-Python objects that make up your app. The next section demonstrates both of
-these advantages.
-
-## A more complicated example
-Take a look at
-[`application_context_2.py`](src/main/python/tutorial/application_context_2.py).
-It defines a new `@cached_property`:
+The last but one line accesses `self.window`. This is defined as follows:
 
 ```python
-class AppContext(ApplicationContext):
-    ...
-    @cached_property
-    def image(self):
-        return QPixmap(self.get_resource('success.jpg'))
+@cached_property
+def window(self):
+    return MainWindow()
 ```
 
-A `@cached_property` is simply a Python `@property` whose value is cached.
-Here's how it is used:
+You can use
+[`@cached_property`](https://build-system.fman.io/manual/#cached_property) to
+define the components that make up your app. The way it works is that the first
+time `self.window` is accessed, `return MainWindow()` is executed. Further
+accesses then cache the value and return it without re-executing the code.
 
-```python
-class AppContext(ApplicationContext):
-    ...
-    def main_window(self):
-        ...
-        image_container.setPixmap(self.image)
-```
+This approach is extremely powerful: In your `ApplicationContext`, define a
+`@cached_property` for each component (a window, a database connection, etc.).
+If it requires other objects, access them as properties. For example, if the
+window requires the database because it displays information from it, then its
+`@cached_property` would access `self.database`. If you connect the parts of
+your application in this centralised way, then it is extremely easy to see how
+they work together.
 
-The first time `self.image` is accessed, the `return QPixmap(...)` code from 
-above is executed. After that, the value is cached and returned without
-executing the code again.
+The final bit of code is the definition of `MainWindow`. It sets up the text
+field for the quote and the button. When the button is clicked, it changes the
+contents of the text field using `_get_quote()` above. You can find the
+full code in [`main.py`](main.py).
 
-`@cached_property` is extremely useful for instantiating and connecting the
-Python objects that make up your application. Define a `@cached_property` for
-each component (a window, a database connection, etc.). If it requires other
-objects, access them as properties, like `self.image` above. The fact that all
-parts of your application live in one place (the application context) makes it
-extremely easy to manage them and see what is used where.
+As already mentioned, you can use `fbs run` to run the new app. But here's
+what's really cool: You can also do `fbs freeze` and `fbs installer` to
+distribute it to other computers. fbs includes the `requests` dependency and the
+`styles.qss` file automatically.
 
-To see the new example in action, change the line
+## Summary
+fbs lets you use Python and Qt to create desktop applications for Windows, Mac
+and Linux. It can create installers for your app, and automatically handles the
+packaging of third-party libraries and data files. These things normally take
+weeks to figure out. fbs gives them to you in minutes instead.
 
-```python
-from tutorial.application_context import AppContext
-```
+## Where to go from here
+fbs's [Manual](https://build-system.fman.io/manual/) explains the technical
+foundation of the steps in this tutorial. Read it to find out more about fbs's
+required directory structure, dependency management, handling of data files,
+custom build commands, API and more.
 
-in your copy of [`main.py`](src/main/python/tutorial/main.py) to
-
-```python
-from tutorial.application_context_2 import AppContext
-```
-
-Then, run `python -m fbs run` again. You will be rewarded ;-)
-
-### Resources
-Another feature of our new example was the call
-`self.get_resource('success.jpg')`. It loads an image that lives in the folder
-[`src/main/resources`](src/main/resources/base).
-But what if the user is running the compiled form of your app? In that case,
-there is no `src/...`, because the directory structure is completely different.
-
-The answer is that `get_resource(...)` is clever enough to determine whether it
-is running from source, or from the compiled form of your app. To ensure that
-the image is in fact distributed alongside your application, `fbs` copies all
-files from `src/main/resources` into the `target/Tutorial` folder. So, if you
-have data files that you want to include (such as images, `.qss` style sheets -
-Qt's equivalent of `.css` files - etc.) place them in `src/main/resources`.
-
-### Different OSs
-Often, you will want to use different versions of a resource file depending on
-the operating system. A typical example of this are `.qss` files where you
-modify your app's style to match the current OS.
-
-The solution for this is that `get_resource(...)` first looks for a
-platform-specific version of the given file. Depending on the current OS, it
-searches the following locations:
-
- * `src/main/resources/windows`
- * `src/main/resources/mac`
- * `src/main/resources/linux`
-
-If it can't find the file in any of these folders, it falls back to
-`src/main/resources/base`.
-
-## Up next...
-As of February 2018, this tutorial is a work in progress. Still to come:
-
- * Creating an installer for Ubuntu (Linux)
- * Codesigning so your users don't get ugly "app is untrusted" messages
- * Automatic updates
+If you have not used PyQt before: It's the library that allowed us in the above
+examples to use Qt (a GUI framework) from Python. fbs's contribution is not to
+combine Python and Qt. It's to make it very easy to package and deploy
+PyQt-based apps to your users' computers. For an introduction to PyQt, see
+[here](https://build-system.fman.io/pyqt5-tutorial).
 
 Feel free to share the link to this tutorial! If you are not yet on fbs's
-mailing list and want to be notified when the tutorial is expanded,
-[sign up here](http://eepurl.com/ddgpnf).
+mailing list and want to be notified as it evolves,
+[sign up here](https://emailoctopus.com/lists/5061ca0f-33e0-11e8-a3c9-06b79b628af2/forms/subscribe).
